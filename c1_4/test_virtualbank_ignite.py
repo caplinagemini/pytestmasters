@@ -1,12 +1,19 @@
-from .virtualbank import Account, VirtualBank, Transaction
+from .virtualbank import *
 from io import StringIO
 import pytest
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine
+from unittest.mock import patch
 
-
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def bank():
-    return VirtualBank()
-
+    engine = create_engine("sqlite:///:memory:")
+    base.metadata.create_all(engine) 
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    bank = VirtualBank()
+    bank.session = session
+    return bank
 
 @pytest.fixture(autouse=True)
 def accounts(bank):
@@ -83,40 +90,36 @@ class TestInterface:
         result = bank.session.query(Account).filter_by(acc_code="BOK-001").first()
         print(result.acc_name)
 
-    def test_main_menu(self, bank, monkeypatch):
-        input = StringIO("2\n")
-        monkeypatch.setattr("sys.stdin", input)
-        assert bank.mainMenu() == 2
+    def test_main_menu(self, bank):
+        with patch("builtins.input", return_value="2"): 
+            assert bank.mainMenu() == 2
 
-    def test_main_menu_nan(self, bank, monkeypatch):
-        input = StringIO("a\n")
-        monkeypatch.setattr("sys.stdin", input)
-        assert bank.mainMenu() == -1
+    def test_main_menu_nan(self, bank):
+        with patch("builtins.input", return_value="a"): 
+            assert bank.mainMenu() == -1
 
     @pytest.mark.xfail(
         reason="Any integer input is accepted, main loop will handle invalid options"
     )
-    def test_main_menu_out_of_range(self, bank, monkeypatch):
-        input = StringIO("5\n")
-        monkeypatch.setattr("sys.stdin", input)
-        assert bank.mainMenu() == -1
+    def test_main_menu_out_of_range(self, bank):
+        with patch("builtins.input", return_value="5"): 
+            assert bank.mainMenu() == -1
 
-    def test_main_menu_newline(self, bank, monkeypatch):
-        input = StringIO("\n")
-        monkeypatch.setattr("sys.stdin", input)
-        assert bank.mainMenu() == -1
-
+    def test_main_menu_newline(self, bank):
+        with patch("builtins.input", return_value=""): 
+            assert bank.mainMenu() == -1
 
 class TestUser:
-    def test_register_user(self, bank, monkeypatch):
+    def test_register_user(self, bank):
         name = "Kalle"
-        age = 25
-        nationalID = 123456789000
-        balance = 7777
-        password = 12345
-        input = StringIO(f"{name}\n{age}\n{nationalID}\n{balance}\n{password}\n")
-        monkeypatch.setattr("sys.stdin", input)
-        bank.registerUser()
+        age = "25"
+        nationalID = "123456789000"
+        balance = "7777"
+        password = "12345"
+        items = [name, age, nationalID, balance, password]
+        items_iter = iter(items)
+        with patch("builtins.input", lambda _: next(items_iter)):
+            bank.registerUser()
         result = bank.session.query(Account).filter_by(acc_name="Kalle").first()
         assert result.acc_age == 25
         assert result.acc_nat_id == "123456789000"
@@ -125,4 +128,14 @@ class TestUser:
 
 
 class TestTransactions:
-    1
+    def test_transfer_fund(self, bank):
+        amount = "560"
+        recipient = "BOK-002"
+        items = [amount, recipient]
+        items_iter = iter(items)
+        aUser = bank.session.query(Account).filter_by(acc_name="Bob").first()
+        oldAmount = aUser.acc_amount
+        bank.loggedInAcc = aUser
+        with patch("builtins.input", lambda _: next(items_iter)):
+            bank.transferFunds()
+        assert oldAmount - float(amount) == bank.session.query(Account).filter_by(acc_name="Bob").first().acc_amount
