@@ -5,15 +5,17 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 from unittest.mock import patch
 
+
 @pytest.fixture
 def bank():
     engine = create_engine("sqlite:///:memory:")
-    base.metadata.create_all(engine) 
+    base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)
     session = Session()
     bank = VirtualBank()
     bank.session = session
     return bank
+
 
 @pytest.fixture(autouse=True)
 def accounts(bank):
@@ -91,23 +93,24 @@ class TestInterface:
         print(result.acc_name)
 
     def test_main_menu(self, bank):
-        with patch("builtins.input", return_value="2"): 
+        with patch("builtins.input", return_value="2"):
             assert bank.mainMenu() == 2
 
     def test_main_menu_nan(self, bank):
-        with patch("builtins.input", return_value="a"): 
+        with patch("builtins.input", return_value="a"):
             assert bank.mainMenu() == -1
 
     @pytest.mark.xfail(
         reason="Any integer input is accepted, main loop will handle invalid options"
     )
     def test_main_menu_out_of_range(self, bank):
-        with patch("builtins.input", return_value="5"): 
+        with patch("builtins.input", return_value="5"):
             assert bank.mainMenu() == -1
 
     def test_main_menu_newline(self, bank):
-        with patch("builtins.input", return_value=""): 
+        with patch("builtins.input", return_value=""):
             assert bank.mainMenu() == -1
+
 
 class TestUser:
     def test_register_user(self, bank):
@@ -138,4 +141,7 @@ class TestTransactions:
         bank.loggedInAcc = aUser
         with patch("builtins.input", lambda _: next(items_iter)):
             bank.transferFunds()
-        assert oldAmount - float(amount) == bank.session.query(Account).filter_by(acc_name="Bob").first().acc_amount
+        assert (
+            oldAmount - float(amount)
+            == bank.session.query(Account).filter_by(acc_name="Bob").first().acc_amount
+        )
