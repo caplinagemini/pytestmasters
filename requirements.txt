@@ -1,2 +1,6 @@
 pytest==8.4.1
 SQLAlchemy==2.0.41
+pytest-cov
+pytest-html
+requests
+black
