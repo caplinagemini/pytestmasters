@@ -1,6 +1,7 @@
 from .code_to_test import divide, recursion, add, raises_value_error
 import pytest
 
+
 # normal assertions
 def test_add():
     assert add(2, 3) == 5

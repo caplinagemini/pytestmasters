@@ -18,11 +18,14 @@ def test_fetch_data_failure():
     # Mock the requests.get method to return a failed response
     with patch("requests.get") as mock_get:
         # add side_effect to raise HTTPError when raise_for_status is called
-        mock_get.return_value = Mock(status_code=404, raise_for_status=Mock(side_effect=requests.HTTPError))
+        mock_get.return_value = Mock(
+            status_code=404, raise_for_status=Mock(side_effect=requests.HTTPError)
+        )
         sut = SystemUnderTest("https://capgemini-api.zzz")
         with pytest.raises(requests.HTTPError):
             sut.fetch_data("bastu")
         mock_get.assert_called_once_with("https://capgemini-api.zzz/bastu")
+
 
 def test_sut_magicmock():
     # Create a MagicMock instance for SystemUnderTest

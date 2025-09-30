@@ -1,5 +1,6 @@
 import requests
 
+
 # some code to be tested
 class SystemUnderTest:
     def __init__(self, base_url):
