@@ -33,4 +33,10 @@ jobs:
         black .
     - name: Test with pytest
       run: |
-        pytest --cov
+        pytest --cov --html=report.html
+    - name: Upload report
+      uses: actions/upload-artifact@v4
+      with:
+        name: report.html
+        path: report.html
+        retention-days: 1
